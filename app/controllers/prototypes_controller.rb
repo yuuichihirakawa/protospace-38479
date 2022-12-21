@@ -1,13 +1,18 @@
 class PrototypesController < ApplicationController
-  before_action :move_to_index, expect: [:new, :edit, :update, :create, :destroy]
-  before_action :authenticate_user!, expect: [:index, :show]
+  # before_action :move_to_index, except: [:new, :edit, :update, :create, :destroy]
+  # before_action :authenticate_user!, expect: [:index, :show]
+  before_action :set_prototype, except: [:index, :new, :create]
+  before_action :authenticate_user!, except: [:index, :show]
+  before_action :contributor_confirmation, only: [:edit, :update, :destroy]
+  
 
   def index
-    @prototypes = Prototype.all
+    #@prototypes = Prototype.all
+    @prototypes = Prototype.includes(:user)
   end
 
   def show
-    @prototype = Prototype.find(params[:id])
+    #@prototype = Prototype.find(params[:id])
     @comment = Comment.new
     @comments = @prototype.comments
   end
@@ -26,29 +31,33 @@ class PrototypesController < ApplicationController
   end
 
   def edit
-    @prototype = Prototype.find(params[:id])
+    #@prototype = Prototype.find(params[:id])
   end
 
   def update
     #current_user.update(prototype_params)
-    @prototype = Prototype.find(params[:id])
-    @prototype.update(prototype_params)
-    if @prototype.save
-      redirect_to root_path
+    #@prototype = Prototype.find(params[:id])
+    #@prototype.update(prototype_params)
+    #if @prototype.save
+    #  redirect_to root_path
+    #else
+    #  render :edit
+    #end
+    if @prototype.update(prototype_params)
+      redirect_to prototype_path(@prototype)
     else
       render :edit
     end
   end
 
   def destroy
-    @prototype = Prototype.find(params[:id])
-    @prototype.destroy
-    redirect_to root_path
-  end
-
-  def move_to_index
-    unless user_signed_in?
-      redirect_to action: :index
+    # @prototype = Prototype.find(params[:id])
+    # @prototype.destroy
+    # redirect_to root_path
+    if @prototype.destroy
+      redirect_to root_path
+    else
+      redirect_to root_path
     end
   end
 
@@ -58,4 +67,16 @@ class PrototypesController < ApplicationController
     params.require(:prototype).permit(:title, :catch_copy, :concept, :image).merge(user_id: current_user.id)
   end
 
+  def set_prototype
+    @prototype = Prototype.find(params[:id])
+  end
+
+  def contributor_confirmation
+    redirect_to root_path unless current_user == @prototype.user
+  end
+  # def move_to_index
+    # unless user_signed_in?
+      # redirect_to action: :index
+    # end
+  # end
 end
